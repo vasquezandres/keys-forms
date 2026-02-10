@@ -116,7 +116,7 @@
 
   <script>
     // === CONFIG ===
-    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwExOCk-m7FRCE7gWvJrijy3a9a6V4XHimWwXtKsbEY3fEvwAtwHBONQ4chX3cvGxPW/exec";
+    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwExOCk-m7FRCE7gWvJrijy3a9a6V4XHimWwXtKsbEY3fEvwAtwHBONQ4chX3cvGxPW/exec"; // <-- Pega la URL del Deploy (Aplicación web)
 
     const form = document.getElementById('form');
     const btn  = document.getElementById('btn');
@@ -126,6 +126,7 @@
 
     let turnstileToken = "";
 
+    // Logos (versión PNG mail-friendly)
     const LOGOS = {
       mcafee: "https://cdn.solutechcloud.com/logos/logo-mcafee-mail.png",
       kaspersky: "https://cdn.solutechcloud.com/logos/logo-kaspersky-mail.png",
@@ -149,7 +150,7 @@
       prodLogo.src = pickLogo(sel.value);
     });
 
-    // Turnstile callbacks (globales)
+    // Turnstile callbacks (deben ser globales)
     window.tsOk = function(token){
       turnstileToken = token || "";
       btn.disabled = !turnstileToken;
@@ -170,7 +171,6 @@
       e.preventDefault();
 
       const datos = {
-        action: "registrarSolicitud",
         nombre:        form.nombre.value.trim(),
         email:         form.email.value.trim(),
         whatsapp:      form.whatsapp.value.trim(),
@@ -194,10 +194,12 @@
       msg.textContent = "Enviando solicitud...";
 
       try {
-        const qs = new URLSearchParams(datos).toString();
-        const url = `${WEBAPP_URL}?${qs}`;
+        const r = await fetch(WEBAPP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos)
+        });
 
-        const r = await fetch(url, { method: "GET" });
         const j = await r.json().catch(() => null);
 
         if (!j || !j.ok) {
@@ -208,6 +210,8 @@
         form.reset();
         prodLogo.src = LOGOS.generico;
         turnstileToken = "";
+        // Nota: el widget se resetea solo cuando expira; si quieres reset manual:
+        // if (window.turnstile) turnstile.reset();
         btn.disabled = true;
 
       } catch (err) {
