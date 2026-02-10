@@ -226,24 +226,34 @@
     msg.textContent = "Enviando solicitud...";
 
     try {
-      const r = await jsonpRequest(WEBAPP_URL, datos);
+    // Enviar como "simple request" (x-www-form-urlencoded) para evitar CORS
+    const body = new URLSearchParams({
+        nombre: datos.nombre,
+        email: datos.email,
+        whatsapp: datos.whatsapp,
+        producto: datos.producto,
+        dispositivos: datos.dispositivos,
+        anios: datos.anios,
+        observaciones: datos.observaciones,
+        turnstileToken: datos.turnstileToken
+    });
 
-      if (!r || !r.ok) {
-        throw new Error(r && r.message ? r.message : "No se pudo enviar.");
-      }
+    await fetch(WEBAPP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body
+    });
 
-      msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
-      form.reset();
-      prodLogo.src = LOGOS.generico;
-      turnstileToken = "";
-      btn.disabled = true;
-
-      // (opcional) reset de Turnstile si quieres:
-      // if (window.turnstile) turnstile.reset();
+    // OJO: con no-cors no se puede leer respuesta. Si no lanzó error, asumimos OK.
+    msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
+    form.reset();
+    prodLogo.src = LOGOS.generico;
+    turnstileToken = "";
+    btn.disabled = true;
 
     } catch (err) {
-      msg.textContent = "Error: " + (err && err.message ? err.message : err);
-      btn.disabled = false;
+    msg.textContent = "Error: No se pudo conectar con la WebApp";
+    btn.disabled = false;
     }
   });
 </script>
