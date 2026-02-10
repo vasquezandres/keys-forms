@@ -133,7 +133,7 @@
     kaspersky: "https://cdn.solutechcloud.com/logos/logo-kaspersky.webp",
     eset: "https://cdn.solutechcloud.com/logos/logo-eset.webp",
     microsoft: "https://cdn.solutechcloud.com/logos/logo-m365.webp",
-    sage: "https://cdn.solutechcloud.com/logos/logo-sage.webp",
+    sage: "https://cdn.solutechcloud.com/logos/logo-.webp",
     generico: "https://cdn.solutechcloud.com/logos/logo-generico-software.webp"
   };
 
@@ -226,34 +226,36 @@
     btn.disabled = true;
     msg.textContent = "Enviando solicitud...";
 
-  try {
-    const res = await jsonpRequest(WEBAPP_URL, {
-      nombre: datos.nombre,
-      email: datos.email,
-      whatsapp: datos.whatsapp,
-      producto: datos.producto,
-      dispositivos: datos.dispositivos,
-      anios: datos.anios,
-      observaciones: datos.observaciones,
-      turnstileToken: datos.turnstileToken
+    try {
+    // Enviar como "simple request" (x-www-form-urlencoded) para evitar CORS
+    const body = new URLSearchParams({
+        nombre: datos.nombre,
+        email: datos.email,
+        whatsapp: datos.whatsapp,
+        producto: datos.producto,
+        dispositivos: datos.dispositivos,
+        anios: datos.anios,
+        observaciones: datos.observaciones,
+        turnstileToken: datos.turnstileToken
     });
 
-    if (!res || res.ok !== true) {
-      throw new Error(res && res.message ? res.message : "No se pudo enviar.");
-    }
+    await fetch(WEBAPP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        body
+    });
 
+    // OJO: con no-cors no se puede leer respuesta. Si no lanzó error, asumimos OK.
     msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
     form.reset();
     prodLogo.src = LOGOS.generico;
     turnstileToken = "";
     btn.disabled = true;
 
-  } catch (err) {
-    msg.textContent = "Error: " + (err && err.message ? err.message : err);
+    } catch (err) {
+    msg.textContent = "Error: No se pudo conectar con la WebApp";
     btn.disabled = false;
-  }
-
-
+    }
   });
 </script>
 
