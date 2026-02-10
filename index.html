@@ -193,27 +193,34 @@
       btn.disabled = true;
       msg.textContent = "Enviando solicitud...";
 
-      try {
-        const qs = new URLSearchParams(datos).toString();
-        const url = `${WEBAPP_URL}?${qs}`;
+    try {
+    // Enviar como POST "simple" (application/x-www-form-urlencoded)
+    const body = new URLSearchParams(datos);
 
-        const r = await fetch(url, { method: "GET" });
-        const j = await r.json().catch(() => null);
+    const r = await fetch(WEBAPP_URL, {
+        method: "POST",
+        body
+    });
 
-        if (!j || !j.ok) {
-          throw new Error(j && j.message ? j.message : "No se pudo enviar.");
-        }
+    const txt = await r.text();
+    let j = null;
+    try { j = JSON.parse(txt); } catch(e) {}
 
-        msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
-        form.reset();
-        prodLogo.src = LOGOS.generico;
-        turnstileToken = "";
-        btn.disabled = true;
+    if (!j || !j.ok) {
+        throw new Error((j && j.message) ? j.message : (txt || "No se pudo enviar."));
+    }
 
-      } catch (err) {
-        msg.textContent = "Error: " + (err && err.message ? err.message : err);
-        btn.disabled = false;
-      }
+    msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
+    form.reset();
+    prodLogo.src = LOGOS.generico;
+    turnstileToken = "";
+    btn.disabled = true;
+
+    } catch (err) {
+    msg.textContent = "Error: " + (err && err.message ? err.message : err);
+    btn.disabled = false;
+    }
+
     });
   </script>
 </body>
