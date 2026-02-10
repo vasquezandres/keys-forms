@@ -114,6 +114,7 @@
     </form>
   </div>
 
+
 <script>
   // === CONFIG ===
   const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyJyblqviFaiI-JqR4Zs2XCsNZqCVY_NL8wD5OGiYlMlySKpPmegDizWeT2WNA_T3MEtg/exec";
@@ -126,13 +127,12 @@
 
   let turnstileToken = "";
 
-  // Logos (mantengo tus URLs tal cual)
   const LOGOS = {
-    mcafee: "https://cdn.solutechcloud.com/logos/logo-mcafee-mail.webp",
-    kaspersky: "https://cdn.solutechcloud.com/logos/logo-kaspersky-mail.webp",
-    eset: "https://cdn.solutechcloud.com/logos/logo-eset-mail.webp",
-    microsoft: "https://cdn.solutechcloud.com/logos/logo-m365-mail.webp",
-    sage: "https://cdn.solutechcloud.com/logos/logo-generico-mail.webp",
+    mcafee: "https://cdn.solutechcloud.com/logos/logo-mcafee.webp",
+    kaspersky: "https://cdn.solutechcloud.com/logos/logo-kaspersky.webp",
+    eset: "https://cdn.solutechcloud.com/logos/logo-eset.webp",
+    microsoft: "https://cdn.solutechcloud.com/logos/logo-m365.webp",
+    sage: "https://cdn.solutechcloud.com/logos/logo-sage.webp",
     generico: "https://cdn.solutechcloud.com/logos/logo-generico-software.webp"
   };
 
@@ -167,53 +167,14 @@
     msg.textContent = "No se pudo validar Turnstile. Intenta otra vez.";
   };
 
-  function jsonpRequest(url, params, timeoutMs = 15000){
-    return new Promise((resolve, reject) => {
-      const cbName = "cb_" + Math.random().toString(16).slice(2);
-      const script = document.createElement("script");
-      const timer = setTimeout(() => {
-        cleanup();
-        reject(new Error("Timeout al enviar la solicitud"));
-      }, timeoutMs);
-
-      function cleanup(){
-        clearTimeout(timer);
-        delete window[cbName];
-        if (script && script.parentNode) script.parentNode.removeChild(script);
-      }
-
-      window[cbName] = (data) => {
-        cleanup();
-        resolve(data);
-      };
-
-      const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
-      script.src = `${url}?${qs}`;
-      script.onerror = () => {
-        cleanup();
-        reject(new Error("No se pudo conectar con la WebApp"));
-      };
-
-      document.body.appendChild(script);
-    });
-  }
-
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
-    const datos = {
-      action: "registrarSolicitudPublica",
-      nombre:        form.nombre.value.trim(),
-      email:         form.email.value.trim(),
-      whatsapp:      form.whatsapp.value.trim(),
-      producto:      form.producto.value.trim(),
-      dispositivos:  form.dispositivos.value.trim(),
-      anios:         form.anios.value.trim(),
-      observaciones: form.observaciones.value.trim(),
-      turnstileToken
-    };
+    const nombre = form.nombre.value.trim();
+    const email  = form.email.value.trim();
+    const whatsapp = form.whatsapp.value.trim();
 
-    if (!datos.nombre || !datos.email || !datos.whatsapp){
+    if (!nombre || !email || !whatsapp){
       msg.textContent = "Por favor completa nombre, correo y WhatsApp.";
       return;
     }
@@ -222,41 +183,48 @@
       return;
     }
 
+    const datos = {
+      action: "registrarSolicitud",
+      nombre,
+      email,
+      whatsapp,
+      producto:      form.producto.value.trim(),
+      dispositivos:  form.dispositivos.value.trim(),
+      anios:         form.anios.value.trim(),
+      observaciones: form.observaciones.value.trim(),
+      turnstileToken
+    };
+
     btn.disabled = true;
     msg.textContent = "Enviando solicitud...";
 
     try {
-    // Enviar como "simple request" (x-www-form-urlencoded) para evitar CORS
-    const body = new URLSearchParams({
-        nombre: datos.nombre,
-        email: datos.email,
-        whatsapp: datos.whatsapp,
-        producto: datos.producto,
-        dispositivos: datos.dispositivos,
-        anios: datos.anios,
-        observaciones: datos.observaciones,
-        turnstileToken: datos.turnstileToken
-    });
+      const qs = new URLSearchParams(datos).toString();
+      const url = `${WEBAPP_URL}?${qs}`;
 
-    await fetch(WEBAPP_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body
-    });
+      const r = await fetch(url, { method: "GET" });
+      const j = await r.json().catch(() => null);
 
-    // OJO: con no-cors no se puede leer respuesta. Si no lanzó error, asumimos OK.
-    msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
-    form.reset();
-    prodLogo.src = LOGOS.generico;
-    turnstileToken = "";
-    btn.disabled = true;
+      if (!j || !j.ok) {
+        throw new Error(j && j.message ? j.message : "No se pudo enviar.");
+      }
+
+      msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
+      form.reset();
+      prodLogo.src = LOGOS.generico;
+      turnstileToken = "";
+      btn.disabled = true;
+
+      // Si quieres resetear el widget manualmente:
+      // if (window.turnstile) turnstile.reset();
 
     } catch (err) {
-    msg.textContent = "Error: No se pudo conectar con la WebApp";
-    btn.disabled = false;
+      msg.textContent = "Error: " + (err && err.message ? err.message : err);
+      btn.disabled = false;
     }
   });
 </script>
+
 
 
 </body>
