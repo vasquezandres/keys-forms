@@ -226,36 +226,33 @@
     btn.disabled = true;
     msg.textContent = "Enviando solicitud...";
 
-    try {
-    // Enviar como "simple request" (x-www-form-urlencoded) para evitar CORS
-    const body = new URLSearchParams({
-        nombre: datos.nombre,
-        email: datos.email,
-        whatsapp: datos.whatsapp,
-        producto: datos.producto,
-        dispositivos: datos.dispositivos,
-        anios: datos.anios,
-        observaciones: datos.observaciones,
-        turnstileToken: datos.turnstileToken
+  try {
+    const res = await jsonpRequest(WEBAPP_URL, {
+      nombre: datos.nombre,
+      email: datos.email,
+      whatsapp: datos.whatsapp,
+      producto: datos.producto,
+      dispositivos: datos.dispositivos,
+      anios: datos.anios,
+      observaciones: datos.observaciones,
+      turnstileToken: datos.turnstileToken
     });
 
-    await fetch(WEBAPP_URL, {
-        method: "POST",
-        mode: "no-cors",
-        body
-    });
+    if (!res || res.ok !== true) {
+      throw new Error(res && res.message ? res.message : "No se pudo enviar.");
+    }
 
-    // OJO: con no-cors no se puede leer respuesta. Si no lanzó error, asumimos OK.
     msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
     form.reset();
     prodLogo.src = LOGOS.generico;
     turnstileToken = "";
     btn.disabled = true;
 
-    } catch (err) {
-    msg.textContent = "Error: No se pudo conectar con la WebApp";
+  } catch (err) {
+    msg.textContent = "Error: " + (err && err.message ? err.message : err);
     btn.disabled = false;
-    }
+  }
+
   });
 </script>
 
