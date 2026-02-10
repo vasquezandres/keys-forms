@@ -114,114 +114,140 @@
     </form>
   </div>
 
-  <script>
-    // === CONFIG ===
-    const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbwExOCk-m7FRCE7gWvJrijy3a9a6V4XHimWwXtKsbEY3fEvwAtwHBONQ4chX3cvGxPW/exec";
+<script>
+  // === CONFIG ===
+  const WEBAPP_URL = "https://script.google.com/macros/s/AKfycbyJyblqviFaiI-JqR4Zs2XCsNZqCVY_NL8wD5OGiYlMlySKpPmegDizWeT2WNA_T3MEtg/exec";
 
-    const form = document.getElementById('form');
-    const btn  = document.getElementById('btn');
-    const msg  = document.getElementById('msg');
-    const sel  = document.getElementById('producto');
-    const prodLogo = document.getElementById('prodLogo');
+  const form = document.getElementById('form');
+  const btn  = document.getElementById('btn');
+  const msg  = document.getElementById('msg');
+  const sel  = document.getElementById('producto');
+  const prodLogo = document.getElementById('prodLogo');
 
-    let turnstileToken = "";
+  let turnstileToken = "";
 
-    const LOGOS = {
-      mcafee: "https://cdn.solutechcloud.com/logos/logo-mcafee-mail.png",
-      kaspersky: "https://cdn.solutechcloud.com/logos/logo-kaspersky-mail.png",
-      eset: "https://cdn.solutechcloud.com/logos/logo-eset-mail.png",
-      microsoft: "https://cdn.solutechcloud.com/logos/logo-m365-mail.png",
-      sage: "https://cdn.solutechcloud.com/logos/logo-generico-mail.png",
-      generico: "https://cdn.solutechcloud.com/logos/logo-generico-software.webp"
-    };
+  // Logos (mantengo tus URLs tal cual)
+  const LOGOS = {
+    mcafee: "https://cdn.solutechcloud.com/logos/logo-mcafee-mail.webp",
+    kaspersky: "https://cdn.solutechcloud.com/logos/logo-kaspersky-mail.webp",
+    eset: "https://cdn.solutechcloud.com/logos/logo-eset-mail.webp",
+    microsoft: "https://cdn.solutechcloud.com/logos/logo-m365-mail.webp",
+    sage: "https://cdn.solutechcloud.com/logos/logo-generico-mail.webp",
+    generico: "https://cdn.solutechcloud.com/logos/logo-generico-software.webp"
+  };
 
-    function pickLogo(producto){
-      const p = (producto || "").toLowerCase();
-      if (p.includes("mcafee")) return LOGOS.mcafee;
-      if (p.includes("kaspersky")) return LOGOS.kaspersky;
-      if (p.includes("eset")) return LOGOS.eset;
-      if (p.includes("microsoft") || p.includes("office") || p.includes("365")) return LOGOS.microsoft;
-      if (p.includes("sage") || p.includes("peachtree")) return LOGOS.sage;
-      return LOGOS.generico;
-    }
+  function pickLogo(producto){
+    const p = (producto || "").toLowerCase();
+    if (p.includes("mcafee")) return LOGOS.mcafee;
+    if (p.includes("kaspersky")) return LOGOS.kaspersky;
+    if (p.includes("eset")) return LOGOS.eset;
+    if (p.includes("microsoft") || p.includes("office") || p.includes("365")) return LOGOS.microsoft;
+    if (p.includes("sage") || p.includes("peachtree")) return LOGOS.sage;
+    return LOGOS.generico;
+  }
 
-    sel.addEventListener('change', () => {
-      prodLogo.src = pickLogo(sel.value);
-    });
+  sel.addEventListener('change', () => {
+    prodLogo.src = pickLogo(sel.value);
+  });
 
-    // Turnstile callbacks (globales)
-    window.tsOk = function(token){
-      turnstileToken = token || "";
-      btn.disabled = !turnstileToken;
-      msg.textContent = "";
-    };
-    window.tsExpired = function(){
-      turnstileToken = "";
-      btn.disabled = true;
-      msg.textContent = "La verificación expiró. Complétala de nuevo.";
-    };
-    window.tsError = function(){
-      turnstileToken = "";
-      btn.disabled = true;
-      msg.textContent = "No se pudo validar Turnstile. Intenta otra vez.";
-    };
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const datos = {
-        action: "registrarSolicitud",
-        nombre:        form.nombre.value.trim(),
-        email:         form.email.value.trim(),
-        whatsapp:      form.whatsapp.value.trim(),
-        producto:      form.producto.value.trim(),
-        dispositivos:  form.dispositivos.value.trim(),
-        anios:         form.anios.value.trim(),
-        observaciones: form.observaciones.value.trim(),
-        turnstileToken
-      };
-
-      if (!datos.nombre || !datos.email || !datos.whatsapp){
-        msg.textContent = "Por favor completa nombre, correo y WhatsApp.";
-        return;
-      }
-      if (!turnstileToken){
-        msg.textContent = "Completa la verificación para enviar.";
-        return;
-      }
-
-      btn.disabled = true;
-      msg.textContent = "Enviando solicitud...";
-
-    try {
-    // Enviar como POST "simple" (application/x-www-form-urlencoded)
-    const body = new URLSearchParams(datos);
-
-    const r = await fetch(WEBAPP_URL, {
-        method: "POST",
-        body
-    });
-
-    const txt = await r.text();
-    let j = null;
-    try { j = JSON.parse(txt); } catch(e) {}
-
-    if (!j || !j.ok) {
-        throw new Error((j && j.message) ? j.message : (txt || "No se pudo enviar."));
-    }
-
-    msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
-    form.reset();
-    prodLogo.src = LOGOS.generico;
+  // Turnstile callbacks (globales)
+  window.tsOk = function(token){
+    turnstileToken = token || "";
+    btn.disabled = !turnstileToken;
+    msg.textContent = "";
+  };
+  window.tsExpired = function(){
     turnstileToken = "";
     btn.disabled = true;
+    msg.textContent = "La verificación expiró. Complétala de nuevo.";
+  };
+  window.tsError = function(){
+    turnstileToken = "";
+    btn.disabled = true;
+    msg.textContent = "No se pudo validar Turnstile. Intenta otra vez.";
+  };
 
-    } catch (err) {
-    msg.textContent = "Error: " + (err && err.message ? err.message : err);
-    btn.disabled = false;
+  function jsonpRequest(url, params, timeoutMs = 15000){
+    return new Promise((resolve, reject) => {
+      const cbName = "cb_" + Math.random().toString(16).slice(2);
+      const script = document.createElement("script");
+      const timer = setTimeout(() => {
+        cleanup();
+        reject(new Error("Timeout al enviar la solicitud"));
+      }, timeoutMs);
+
+      function cleanup(){
+        clearTimeout(timer);
+        delete window[cbName];
+        if (script && script.parentNode) script.parentNode.removeChild(script);
+      }
+
+      window[cbName] = (data) => {
+        cleanup();
+        resolve(data);
+      };
+
+      const qs = new URLSearchParams({ ...params, callback: cbName }).toString();
+      script.src = `${url}?${qs}`;
+      script.onerror = () => {
+        cleanup();
+        reject(new Error("No se pudo conectar con la WebApp"));
+      };
+
+      document.body.appendChild(script);
+    });
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const datos = {
+      action: "registrarSolicitudPublica",
+      nombre:        form.nombre.value.trim(),
+      email:         form.email.value.trim(),
+      whatsapp:      form.whatsapp.value.trim(),
+      producto:      form.producto.value.trim(),
+      dispositivos:  form.dispositivos.value.trim(),
+      anios:         form.anios.value.trim(),
+      observaciones: form.observaciones.value.trim(),
+      turnstileToken
+    };
+
+    if (!datos.nombre || !datos.email || !datos.whatsapp){
+      msg.textContent = "Por favor completa nombre, correo y WhatsApp.";
+      return;
+    }
+    if (!turnstileToken){
+      msg.textContent = "Completa la verificación para enviar.";
+      return;
     }
 
-    });
-  </script>
+    btn.disabled = true;
+    msg.textContent = "Enviando solicitud...";
+
+    try {
+      const r = await jsonpRequest(WEBAPP_URL, datos);
+
+      if (!r || !r.ok) {
+        throw new Error(r && r.message ? r.message : "No se pudo enviar.");
+      }
+
+      msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
+      form.reset();
+      prodLogo.src = LOGOS.generico;
+      turnstileToken = "";
+      btn.disabled = true;
+
+      // (opcional) reset de Turnstile si quieres:
+      // if (window.turnstile) turnstile.reset();
+
+    } catch (err) {
+      msg.textContent = "Error: " + (err && err.message ? err.message : err);
+      btn.disabled = false;
+    }
+  });
+</script>
+
+
 </body>
 </html>
