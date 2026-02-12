@@ -118,7 +118,6 @@
 
 
 <script>
-  // === CONFIG ===
   const WORKER_URL = "https://wforms.solutechcloud.com/submit";
 
   const form = document.getElementById('form');
@@ -152,7 +151,6 @@
     prodLogo.src = pickLogo(sel.value);
   });
 
-  // Turnstile callbacks (globales)
   window.tsOk = function(token){
     turnstileToken = token || "";
     btn.disabled = !turnstileToken;
@@ -203,9 +201,7 @@
       });
 
       const j = await r.json().catch(() => null);
-      if (!r.ok || !j || !j.ok) {
-        throw new Error((j && j.message) ? j.message : "No se pudo enviar.");
-      }
+      if (!r.ok || !j || !j.ok) throw new Error(j?.message || "No se pudo enviar.");
 
       msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
       form.reset();
@@ -214,11 +210,12 @@
       btn.disabled = true;
 
     } catch (err) {
-      msg.textContent = "Error: " + (err && err.message ? err.message : err);
+      msg.textContent = "Error: " + (err?.message || err);
       btn.disabled = false;
     }
   });
 </script>
+
 
 
 
