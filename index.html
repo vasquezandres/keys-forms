@@ -119,8 +119,7 @@
 
 <script>
   // === CONFIG ===
-  // Worker (API)
-  const API_URL = "https://wforms.solutechcloud.com/";
+  const WORKER_URL = "https://wforms.solutechcloud.com/submit";
 
   const form = document.getElementById('form');
   const btn  = document.getElementById('btn');
@@ -130,7 +129,6 @@
 
   let turnstileToken = "";
 
-  // Logos (mantengo tus URLs tal cual)
   const LOGOS = {
     mcafee: "https://cdn.solutechcloud.com/logos/logo-mcafee.webp",
     kaspersky: "https://cdn.solutechcloud.com/logos/logo-kaspersky.webp",
@@ -150,14 +148,9 @@
     return LOGOS.generico;
   }
 
-  // Set logo inicial por si hay valor precargado
-  if (prodLogo) prodLogo.src = pickLogo(sel && sel.value);
-
-  if (sel) {
-    sel.addEventListener('change', () => {
-      if (prodLogo) prodLogo.src = pickLogo(sel.value);
-    });
-  }
+  sel.addEventListener('change', () => {
+    prodLogo.src = pickLogo(sel.value);
+  });
 
   // Turnstile callbacks (globales)
   window.tsOk = function(token){
@@ -180,13 +173,13 @@
     e.preventDefault();
 
     const datos = {
-      nombre:        (form.nombre?.value || "").trim(),
-      email:         (form.email?.value || "").trim(),
-      whatsapp:      (form.whatsapp?.value || "").trim(),
-      producto:      (form.producto?.value || "").trim(),
-      dispositivos:  (form.dispositivos?.value || "").trim(),
-      anios:         (form.anios?.value || "").trim(),
-      observaciones: (form.observaciones?.value || "").trim(),
+      nombre:        form.nombre.value.trim(),
+      email:         form.email.value.trim(),
+      whatsapp:      form.whatsapp.value.trim(),
+      producto:      form.producto.value.trim(),
+      dispositivos:  form.dispositivos.value.trim(),
+      anios:         form.anios.value.trim(),
+      observaciones: form.observaciones.value.trim(),
       turnstileToken
     };
 
@@ -203,35 +196,30 @@
     msg.textContent = "Enviando solicitud...";
 
     try {
-      const r = await fetch(API_URL, {
+      const r = await fetch(WORKER_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(datos)
+        body: JSON.stringify(datos),
       });
 
-      // Si el worker responde JSON: {ok:true/false, message:"..."}
       const j = await r.json().catch(() => null);
-
       if (!r.ok || !j || !j.ok) {
-        const m = (j && (j.message || j.error)) ? (j.message || j.error) : "No se pudo enviar.";
-        throw new Error(m);
+        throw new Error((j && j.message) ? j.message : "No se pudo enviar.");
       }
 
       msg.textContent = "Solicitud enviada correctamente. Te contactaremos en breve.";
       form.reset();
-      if (prodLogo) prodLogo.src = LOGOS.generico;
-
-      // Turnstile: al resetear, el token ya no sirve
+      prodLogo.src = LOGOS.generico;
       turnstileToken = "";
       btn.disabled = true;
 
     } catch (err) {
-      msg.textContent = "Error: " + (err && err.message ? err.message : "No se pudo conectar con la API");
-      // Si falló, permitimos reintentar SIN resetear el formulario
+      msg.textContent = "Error: " + (err && err.message ? err.message : err);
       btn.disabled = false;
     }
   });
 </script>
+
 
 
 </body>
